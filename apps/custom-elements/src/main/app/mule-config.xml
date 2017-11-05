@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule 
+  xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" 
+  xmlns:spring="http://www.springframework.org/schema/beans" 
+  xmlns="http://www.mulesoft.org/schema/mule/core"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:http="http://www.mulesoft.org/schema/mule/http"
+  xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+  http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+  http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+  http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+  http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+  http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+
+  <http:listener-config name="http8081" host="localhost" port="8081" />
+
+  <flow name="main">
+    <http:listener config-ref="http8081" path="/component" />
+    <choice>
+      <when expression="#[message.inboundProperties.'http.query.params'.type == 'map']">
+        <set-payload value="#[{'message' : 'i am a map'}]" />
+        <flow-ref name="componentExample"/>
+      </when>
+      <when expression="#[message.inboundProperties.'http.query.params'.type == 'array']">
+        <set-payload value="#[['i am an array node']]" />
+        <flow-ref name="componentExample"/>
+      </when>
+      <when expression="#[message.inboundProperties.'http.query.params'.type == 'string']">
+        <set-payload value="i am a string" />
+        <flow-ref name="componentExample"/>
+      </when>
+      <otherwise>
+        <logger message="Could not locate requested path"/>
+      </otherwise>
+    </choice>
+  </flow>
+
+  <flow name="componentExample">
+  </flow>
+
+</mule>

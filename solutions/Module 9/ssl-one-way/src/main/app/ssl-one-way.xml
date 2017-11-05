@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ssl-one-way application
+  Demonstrates the configuration of a mule client and server using ssl
+  To model a trustStore (client) and keyStore (server), serverStore.jks
+  has been created. It can be applied to each store respectivly.
+  Unless overridden, the server will use port 8082 (secure) and client will use port 8081 (unsecure)
+
+  If a new key keyStore is desired, use the follow command:
+    keytool -genkey -keyalg RSA -alias selfsigned -keystore clientStore.jks -storepass password -validity 360 -keysize 2048
+-->
+
+<mule 
+  xmlns:http="http://www.mulesoft.org/schema/mule/http" 
+  xmlns:tls="http://www.mulesoft.org/schema/mule/tls"
+  xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" 
+  xmlns:spring="http://www.springframework.org/schema/beans" 
+  xmlns="http://www.mulesoft.org/schema/mule/core"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+  http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd
+  http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+  http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+
+  <!-- clientFlow endpoint for triggering requests -->
+  <http:listener-config name="HTTPUnsecureListener" host="0.0.0.0" port="${http.client.port}" />
+
+  <!-- server providing client certificate/key from key-store - serverStore.jks -->
+  <http:listener-config name="HTTPSecureListener" protocol="HTTPS" host="0.0.0.0" port="${http.server.port}">
+    <tls:context>
+      <tls:key-store type="jks" path="serverStore.jks" alias="selfsigned" keyPassword="password" password="password"/>
+    </tls:context>
+  </http:listener-config>
+
+  <!-- client checking server certificate against its trustStore - serverStore.jks -->
+  <http:request-config name="HTTPSecureRequest" protocol="HTTPS" host="localhost" port="${http.server.port}" doc:name="HTTP Request Configuration">
+    <tls:context>
+      <tls:trust-store path="serverStore.jks" password="password" type="jks" />
+    </tls:context>
+  </http:request-config>
+
+  <!-- client: request/receive resources from trusted sources -->
+  <flow name="clientFlow">
+    <http:listener config-ref="HTTPUnsecureListener" path="client" />
+    <http:request config-ref="HTTPSecureRequest" path="server" method="GET" />
+  </flow>
+
+  <!-- server: provide client certificate and serve data -->
+  <flow name="serverFlow">
+    <http:listener config-ref="HTTPSecureListener" path="server" />
+    <set-payload value="#['Data received']" doc:name="Set Payload" />
+  </flow>
+    
+</mule>
